@@ -13,18 +13,20 @@
     "@tanstack/react-query-devtools": "^5.102.8",
     "@visx/axis": "^4.0.0",
     "@visx/curve": "^4.0.0",
+    "@visx/event": "^4.0.0",
     "@visx/gradient": "^4.0.0",
+    "@visx/grid": "^4.0.0",
     "@visx/group": "^4.0.0",
     "@visx/responsive": "^4.0.0",
     "@visx/scale": "^4.0.0",
     "@visx/shape": "^4.0.0",
     "@visx/tooltip": "^4.0.0",
     "d3-array": "^3.2.4",
+    "msw": "^2.15.0",
     "next": "16.3.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "zustand": "^5.0.15",
-    "msw": "^2.15.0"
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

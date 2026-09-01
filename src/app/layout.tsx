@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Providers } from "./providers";
 import { ThemeSync } from "./providers/ThemeSync";
 import { ThemeToggle } from "@/shared/components/ThemeToggle";
@@ -37,7 +38,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Providers>
           <ThemeSync />
           <header className="flex items-center justify-between border-b border-border px-6 py-4">
-            <span className="font-semibold tracking-tight">Budget Tracker</span>
+            <div className="flex items-center gap-6">
+              <span className="font-semibold tracking-tight">Budget Tracker</span>
+              <nav className="flex items-center gap-4 text-sm text-muted">
+                <Link href="/" className="transition-colors hover:text-text">
+                  Dashboard
+                </Link>
+                <Link href="/transactions" className="transition-colors hover:text-text">
+                  Transactions
+                </Link>
+              </nav>
+            </div>
             <ThemeToggle />
           </header>
           {children}
