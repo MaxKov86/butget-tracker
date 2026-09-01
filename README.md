@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Budget Tracker
 
-## Getting Started
+Pet-проект для портфоліо: трекер особистих фінансів з графіками витрат/доходів. Next.js (App Router) + TypeScript + Tailwind CSS + Zustand + TanStack Query + Visx.
 
-First, run the development server:
+## Запуск
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+MSW перехоплює запити до `/api/transactions` та `/api/categories` в dev-режимі — реального бекенду не потрібно.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Прогрес по кроках ТЗ
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- [x] **Крок 1:** Налаштування проекту (Next.js App Router + TS + Tailwind + TanStack Query + Zustand + Visx), мокове API через MSW
+- [ ] Крок 2: Базовий TanStack Query шар, список транзакцій без фільтрів/графіків
+- [ ] Крок 3: Dashboard — картки-підсумки + перший графік (Visx)
+- [ ] Крок 4: Кругова діаграма розподілу по категоріях
+- [ ] Крок 5: Фільтри (період, категорія, тип) — Zustand store + URL sync
+- [ ] Крок 6: CRUD транзакцій — форма додавання/редагування з валідацією
+- [ ] Крок 7: Видалення, бюджет-ліміти, поліш (skeleton, error states, темна тема)
 
-## Learn More
+## Архітектурний принцип проекту
 
-To learn more about Next.js, take a look at the following resources:
+**TanStack Query** відповідає за все, що приходить із сервера (транзакції,
+категорії, кешування, інвалідація). **Zustand** відповідає ТІЛЬКИ за
+клієнтський UI-стан (вибрані фільтри, відкриті модалки) — ніколи не
+зберігає дані транзакцій.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Структура
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+src/
+  app/
+    providers/      # QueryProvider, MSWProvider — client-side обгортки
+    layout.tsx
+    page.tsx
+  features/
+    transactions/
+      types.ts       # Transaction, Category
+      components/
+    dashboard/
+      components/
+  store/            # Zustand stores (UI-стан, не дані з сервера)
+  shared/
+    components/
+    lib/
+  mocks/            # MSW handlers + генератор мокових даних
+```
