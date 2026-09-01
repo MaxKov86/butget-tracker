@@ -30,6 +30,8 @@
   --color-income: var(--income);
   --color-expense: var(--expense);
   --color-warning: var(--warning);
+
+
 }
 
 /* dark — дефолтна тема */
@@ -46,13 +48,16 @@
   --muted: #8b949e;
   --faint: #545d68;
 
-  --brand: #2dd4bf; /* teal-400 — достатньо світлий для контрасту на темному фоні */
+  --brand: #2dd4bf;
+  /* teal-400 — достатньо світлий для контрасту на темному фоні */
   --brand-hover: #5eead4;
   --brand-soft: rgba(45, 212, 191, 0.12);
   --on-brand: #0d1117;
 
-  --income: #34d399; /* emerald-400 */
-  --expense: #fb7185; /* rose-400 */
+  --income: #34d399;
+  /* emerald-400 */
+  --expense: #fb7185;
+  /* rose-400 */
   --warning: #fbbf24;
 }
 
@@ -68,17 +73,16 @@
   --muted: #64748b;
   --faint: #94a3b8;
 
-  --brand: #0d9488; /* teal-600 — темніший за dark-версію, бо на світлому фоні
+  --brand: #0d9488;
+  /* teal-600 — темніший за dark-версію, бо на світлому фоні
                         teal-400 дає недостатній WCAG-контраст */
   --brand-hover: #14b8a6;
   --brand-soft: rgba(13, 148, 136, 0.1);
   --on-brand: #ffffff;
 
-  --income: #059669; /* emerald-600 */
-  --expense: #e11d48; /* rose-600 */
+  --income: #059669;
+  /* emerald-600 */
+  --expense: #e11d48;
+  /* rose-600 */
   --warning: #d97706;
-}
-
-body {
-  transition: background-color 0.2s ease, color 0.2s ease;
 }

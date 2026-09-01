@@ -111,7 +111,7 @@ export function TransactionsList() {
               return (
                 <tr
                   key={tx.id}
-                  className="border-t border-border transition-colors hover:bg-surface-2"
+                  className="border-t border-border  hover:bg-surface-2"
                 >
                   <td className="px-4 py-3">{tx.description}</td>
                   <td className="px-4 py-3">
