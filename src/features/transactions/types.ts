@@ -16,5 +16,17 @@ export interface Transaction {
   date: string; // ISO 8601
 }
 
+/**
+ * Поля, які реально редагує користувач у формі. id генерується "сервером"
+ * при створенні і більше не змінюється.
+ */
+export interface TransactionFormValues {
+  type: TransactionType;
+  categoryId: string;
+  amount: number; // у ДОЛАРАХ у формі (не в центах) — конвертація в API-шарі
+  description: string;
+  date: string; // YYYY-MM-DD, з <input type="date">
+}
+
 // Наступні кроки додадуть сюди TransactionFilters —
 // поки що тільки базова модель, щоб перевірити наскрізний потік даних

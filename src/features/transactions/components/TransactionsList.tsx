@@ -1,10 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTransactions, useCategories } from '../api';
 import { useFiltersStore } from '@/store/filtersStore';
 import { filterTransactions } from '../utils/filterTransactions';
 import { formatCurrency, formatDate } from '@/shared/lib/formatters';
+import { TransactionFormModal } from './TransactionFormModal';
+import type { Transaction } from '../types';
 
 export function TransactionsList() {
   const { data: transactions, isLoading: isTxLoading, isError: isTxError } = useTransactions();
@@ -13,6 +15,8 @@ export function TransactionsList() {
   const period = useFiltersStore((s) => s.period);
   const categoryId = useFiltersStore((s) => s.categoryId);
   const type = useFiltersStore((s) => s.type);
+
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
   const filtered = useMemo(
     () => filterTransactions(transactions ?? [], { period, categoryId, type }),
@@ -46,49 +50,69 @@ export function TransactionsList() {
   const categoryMap = new Map((categories ?? []).map((c) => [c.id, c]));
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-border">
-      <table className="w-full min-w-[520px] text-sm">
-        <thead className="bg-surface-2 text-xs uppercase tracking-wide text-faint">
-          <tr>
-            <th className="px-4 py-3 text-left font-medium">Опис</th>
-            <th className="px-4 py-3 text-left font-medium">Категорія</th>
-            <th className="px-4 py-3 text-left font-medium">Дата</th>
-            <th className="px-4 py-3 text-right font-medium">Сума</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filtered.map((tx) => {
-            const category = categoryMap.get(tx.categoryId);
-            const isIncome = tx.type === 'income';
+    <>
+      <div className="overflow-x-auto rounded-lg border border-border">
+        <table className="w-full min-w-[600px] text-sm">
+          <thead className="bg-surface-2 text-xs uppercase tracking-wide text-faint">
+            <tr>
+              <th className="px-4 py-3 text-left font-medium">Опис</th>
+              <th className="px-4 py-3 text-left font-medium">Категорія</th>
+              <th className="px-4 py-3 text-left font-medium">Дата</th>
+              <th className="px-4 py-3 text-right font-medium">Сума</th>
+              <th className="px-4 py-3 text-right font-medium">Дії</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((tx) => {
+              const category = categoryMap.get(tx.categoryId);
+              const isIncome = tx.type === 'income';
 
-            return (
-              <tr key={tx.id} className="border-t border-border transition-colors hover:bg-surface-2">
-                <td className="px-4 py-3">{tx.description}</td>
-                <td className="px-4 py-3">
-                  {category && (
-                    <span className="inline-flex items-center gap-2">
-                      <span
-                        className="h-2 w-2 rounded-full"
-                        style={{ backgroundColor: category.color }}
-                      />
-                      {category.name}
-                    </span>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-muted">{formatDate(tx.date)}</td>
-                <td
-                  className={`px-4 py-3 text-right font-mono tabular-nums ${
-                    isIncome ? 'text-income' : 'text-expense'
-                  }`}
-                >
-                  {isIncome ? '+' : '−'}
-                  {formatCurrency(tx.amount)}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+              return (
+                <tr key={tx.id} className="border-t border-border transition-colors hover:bg-surface-2">
+                  <td className="px-4 py-3">{tx.description}</td>
+                  <td className="px-4 py-3">
+                    {category && (
+                      <span className="inline-flex items-center gap-2">
+                        <span
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: category.color }}
+                        />
+                        {category.name}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-muted">{formatDate(tx.date)}</td>
+                  <td
+                    className={`px-4 py-3 text-right font-mono tabular-nums ${
+                      isIncome ? 'text-income' : 'text-expense'
+                    }`}
+                  >
+                    {isIncome ? '+' : '−'}
+                    {formatCurrency(tx.amount)}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      type="button"
+                      onClick={() => setEditingTransaction(tx)}
+                      className="rounded-md border border-border px-2.5 py-1 text-xs text-muted hover:bg-surface hover:text-text"
+                    >
+                      Edit
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {editingTransaction && (
+        <TransactionFormModal
+          isOpen={Boolean(editingTransaction)}
+          transaction={editingTransaction}
+          onClose={() => setEditingTransaction(null)}
+        />
+      )}
+    </>
   );
 }

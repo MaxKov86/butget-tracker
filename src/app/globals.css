@@ -35,6 +35,8 @@
 /* dark — дефолтна тема */
 :root,
 [data-theme='dark'] {
+  color-scheme: dark;
+
   --bg: #0d1117;
   --surface: #161b22;
   --surface-2: #1c2128;
@@ -55,6 +57,8 @@
 }
 
 [data-theme='light'] {
+  color-scheme: light;
+
   --bg: #f8fafc;
   --surface: #ffffff;
   --surface-2: #f1f5f9;

@@ -71,3 +71,17 @@ function generateTransaction(index: number): Transaction {
 export const mockTransactions: Transaction[] = Array.from({ length: 250 }, (_, i) =>
   generateTransaction(i)
 );
+
+/**
+ * Наступний ID для нової транзакції — знаходимо найбільший існуючий
+ * числовий суфікс і додаємо 1, а не просто `mockTransactions.length`
+ * (інакше після видалення записів ID могли б повторюватись)
+ */
+export function generateNextTransactionId(): string {
+  const maxNumericId = mockTransactions.reduce((max, tx) => {
+    const numeric = Number(tx.id.replace('TXN-', ''));
+    return Number.isFinite(numeric) && numeric > max ? numeric : max;
+  }, 10000);
+
+  return `TXN-${maxNumericId + 1}`;
+}
