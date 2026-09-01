@@ -1,4 +1,5 @@
-import type { Transaction } from '@/features/transactions/types';
+import { rollup, sum } from 'd3-array';
+import type { Transaction, Category } from '@/features/transactions/types';
 
 export interface DailyTotal {
   date: Date;
@@ -60,4 +61,45 @@ export function computeTotals(transactions: Transaction[]): PeriodTotals {
   }
 
   return { income, expense, balance: income - expense };
+}
+
+export interface CategoryBreakdownItem {
+  categoryId: string;
+  name: string;
+  color: string;
+  total: number;
+}
+
+/**
+ * Розподіл ВИТРАТ (не доходів — категорії доходів у нас лише дві:
+ * Salary/Freelance, розподіл там менш показовий) по категоріях.
+ * d3-array.rollup — те, заради чого власне встановлювали d3-array ще
+ * на кроці 1: групування + агрегація (sum) в одному виклику, замість
+ * ручного reduce() з Map, як у buildDailySeries вище (там ручний Map
+ * був природнішим через потребу заповнювати "дірки" нулями — тут такої
+ * потреби нема, тому rollup доречніший).
+ */
+export function aggregateExpensesByCategory(
+  transactions: Transaction[],
+  categories: Category[]
+): CategoryBreakdownItem[] {
+  const expenseTransactions = transactions.filter((tx) => tx.type === 'expense');
+  const totalsByCategory = rollup(
+    expenseTransactions,
+    (txs) => sum(txs, (tx) => tx.amount),
+    (tx) => tx.categoryId
+  );
+  const categoryMap = new Map(categories.map((c) => [c.id, c]));
+
+  return Array.from(totalsByCategory.entries())
+    .map(([categoryId, total]) => {
+      const category = categoryMap.get(categoryId);
+      return {
+        categoryId,
+        name: category?.name ?? categoryId,
+        color: category?.color ?? '#8b949e',
+        total,
+      };
+    })
+    .sort((a, b) => b.total - a.total); // найбільші витрати спочатку — і для легенди, і для читабельності діаграми
 }
