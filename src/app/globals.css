@@ -1,26 +1,80 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/**
+ * Tailwind v4 CSS-first конфіг: @theme реєструє токени як utility-класи
+ * (--color-bg -> bg-bg, text-bg тощо), але кожен токен посилається на
+ * ЗВИЧАЙНУ CSS custom property (var(--bg)), а не на застигле значення.
+ * Це і дає runtime-перемикання теми — @theme значення самі по собі
+ * компілюються один раз, а :root / [data-theme='light'] нижче міняють
+ * РЕАЛЬНІ значення в браузері без перекомпіляції.
+ *
+ * Палітра свідомо ІНША, ніж amber/charcoal з проектів 1 і 2 — teal як
+ * бренд-акцент (асоціюється з фінансовим "зростанням"), окремі семантичні
+ * кольори для доходу (emerald) і витрати (rose), не залежні від бренду.
+ */
+@theme {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-soft: var(--brand-soft);
+  --color-on-brand: var(--on-brand);
+
+  --color-income: var(--income);
+  --color-expense: var(--expense);
+  --color-warning: var(--warning);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* dark — дефолтна тема */
+:root,
+[data-theme='dark'] {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface-2: #1c2128;
+  --border: rgba(255, 255, 255, 0.08);
+
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --faint: #545d68;
+
+  --brand: #2dd4bf; /* teal-400 — достатньо світлий для контрасту на темному фоні */
+  --brand-hover: #5eead4;
+  --brand-soft: rgba(45, 212, 191, 0.12);
+  --on-brand: #0d1117;
+
+  --income: #34d399; /* emerald-400 */
+  --expense: #fb7185; /* rose-400 */
+  --warning: #fbbf24;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+[data-theme='light'] {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --border: rgba(15, 23, 42, 0.08);
+
+  --text: #0f172a;
+  --muted: #64748b;
+  --faint: #94a3b8;
+
+  --brand: #0d9488; /* teal-600 — темніший за dark-версію, бо на світлому фоні
+                        teal-400 дає недостатній WCAG-контраст */
+  --brand-hover: #14b8a6;
+  --brand-soft: rgba(13, 148, 136, 0.1);
+  --on-brand: #ffffff;
+
+  --income: #059669; /* emerald-600 */
+  --expense: #e11d48; /* rose-600 */
+  --warning: #d97706;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
