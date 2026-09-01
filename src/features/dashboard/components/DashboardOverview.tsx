@@ -3,10 +3,28 @@
 import { useMemo } from 'react';
 import { useTransactions, useCategories } from '@/features/transactions/api';
 import { useDashboardStore } from '@/store/dashboardStore';
+import { Skeleton } from '@/shared/components/Skeleton';
 import { buildDailySeries, computeTotals, aggregateExpensesByCategory } from '../utils/aggregateTransactions';
 import { BalanceCards } from './BalanceCards';
 import { SpendingChart } from './SpendingChart';
 import { CategoryBreakdownChart } from './CategoryBreakdownChart';
+import { BudgetLimits } from './BudgetLimits';
+
+function DashboardSkeleton() {
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Skeleton className="h-24" />
+        <Skeleton className="h-24" />
+        <Skeleton className="h-24" />
+      </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[3fr_2fr]">
+        <Skeleton className="h-72" />
+        <Skeleton className="h-72" />
+      </div>
+    </div>
+  );
+}
 
 export function DashboardOverview() {
   const { data: transactions, isLoading, isError } = useTransactions();
@@ -27,17 +45,25 @@ export function DashboardOverview() {
   const periodTotals = useMemo(() => computeTotals(periodTransactions), [periodTransactions]);
 
   // Total balance — за ВЕСЬ час, незалежно від обраного періоду графіка
-  // (це окрема, навмисно ширша метрика: "скільки я маю зараз")
   const allTimeBalance = useMemo(() => computeTotals(transactions ?? []).balance, [transactions]);
 
-  // Розподіл по категоріях — за той самий період, що й графік динаміки
   const categoryBreakdown = useMemo(
     () => aggregateExpensesByCategory(periodTransactions, categories ?? []),
     [periodTransactions, categories]
   );
 
+  const expenseCategories = useMemo(
+    () => (categories ?? []).filter((c) => c.type === 'expense'),
+    [categories]
+  );
+
+  const spentByCategory = useMemo(
+    () => new Map(categoryBreakdown.map((item) => [item.categoryId, item.total])),
+    [categoryBreakdown]
+  );
+
   if (isLoading) {
-    return <p className="text-sm text-muted">Завантаження...</p>;
+    return <DashboardSkeleton />;
   }
 
   if (isError || !transactions) {
@@ -52,6 +78,8 @@ export function DashboardOverview() {
         <SpendingChart data={dailySeries} />
         <CategoryBreakdownChart data={categoryBreakdown} />
       </div>
+
+      <BudgetLimits expenseCategories={expenseCategories} spentByCategory={spentByCategory} />
     </div>
   );
 }

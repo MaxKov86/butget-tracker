@@ -57,4 +57,17 @@ export const handlers = [
 
     return HttpResponse.json(updatedTransaction);
   }),
+
+  http.delete('/api/transactions/:id', ({ params }) => {
+    const { id } = params;
+    const index = mockTransactions.findIndex((tx) => tx.id === id);
+
+    if (index === -1) {
+      return HttpResponse.json({ message: 'Transaction not found' }, { status: 404 });
+    }
+
+    mockTransactions.splice(index, 1);
+
+    return new HttpResponse(null, { status: 204 });
+  }),
 ];

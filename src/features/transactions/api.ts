@@ -84,3 +84,19 @@ export function useUpdateTransaction() {
     },
   });
 }
+
+async function deleteTransaction(id: string): Promise<void> {
+  const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to delete transaction');
+}
+
+export function useDeleteTransaction() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteTransaction,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    },
+  });
+}
