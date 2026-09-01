@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from 'react';
 
 /**
  * У Next.js App Router MSW не можна просто "запустити і забути" —
@@ -24,35 +24,10 @@ export function MSWProvider({ children }: { children: ReactNode }) {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    async function refreshWorkerRegistration() {
-      const { forceRestartWorker } = await import("../../mocks/browser");
-      await forceRestartWorker();
-    }
-
-    function handleVisibilityChange() {
-      if (document.visibilityState === "visible") {
-        refreshWorkerRegistration();
-      }
-    }
-
-    const REFRESH_INTERVAL_MS = 20_000;
-    const intervalId = setInterval(
-      refreshWorkerRegistration,
-      REFRESH_INTERVAL_MS,
-    );
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      clearInterval(intervalId);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, []);
-
-  useEffect(() => {
     let isCancelled = false;
 
     async function enableMocking() {
-      const { startWorker } = await import("../../mocks/browser");
+      const { startWorker } = await import('../../mocks/browser');
       await startWorker();
       if (!isCancelled) {
         setIsReady(true);
@@ -68,6 +43,45 @@ export function MSWProvider({ children }: { children: ReactNode }) {
     // setState на розмонтованому компоненті)
     return () => {
       isCancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    /**
+     * Браузер вбиває простоюючий Service Worker-процес приблизно після
+     * ~30с без fetch/message-активності — і при наступному запиті
+     * перезапускає його "прозоро". Але MSW передає список хендлерів
+     * у SW лише ОДИН РАЗ, через postMessage-хендшейк при worker.start().
+     * Свіжий (перезапущений) SW-процес цей хендшейк не пам'ятає — тому
+     * наступні запити до /api/* перестають мокатись і падають у 404.
+     *
+     * forceRestartWorker() (не просто повторний startWorker()!) — MSW
+     * сам ігнорує повторний start() як "redundant", якщо його власний
+     * внутрішній прапорець "mocking увімкнено" ще не скинутий. Тому
+     * потрібен явний stop() перед новим start() — див. коментар у
+     * mocks/browser.ts.
+     *
+     * REFRESH_INTERVAL_MS свідомо МЕНШИЙ за типовий ~30с idle-таймаут —
+     * повторюємо хендшейк ще ДО того, як браузер встигне вбити процес.
+     */
+    async function refreshWorkerRegistration() {
+      const { forceRestartWorker } = await import('../../mocks/browser');
+      await forceRestartWorker();
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        refreshWorkerRegistration();
+      }
+    }
+
+    const REFRESH_INTERVAL_MS = 20_000;
+    const intervalId = setInterval(refreshWorkerRegistration, REFRESH_INTERVAL_MS);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 

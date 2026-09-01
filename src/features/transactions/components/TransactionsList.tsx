@@ -1,14 +1,15 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import { useTransactions, useCategories, useDeleteTransaction } from "../api";
-import { useFiltersStore } from "@/store/filtersStore";
-import { filterTransactions } from "../utils/filterTransactions";
-import { formatCurrency, formatDate } from "@/shared/lib/formatters";
-import { TransactionFormModal } from "./TransactionFormModal";
-import { Skeleton } from "@/shared/components/Skeleton";
-import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
-import type { Transaction } from "../types";
+import { useMemo, useState } from 'react';
+import { useTransactions, useCategories, useDeleteTransaction } from '../api';
+import { useFiltersStore } from '@/store/filtersStore';
+import { filterTransactions } from '../utils/filterTransactions';
+import { formatCurrency, formatDate } from '@/shared/lib/formatters';
+import { TransactionFormModal } from './TransactionFormModal';
+import { Skeleton } from '@/shared/components/Skeleton';
+import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
+import { Pagination } from '@/shared/components/Pagination';
+import type { Transaction } from '../types';
 
 const SKELETON_ROWS_COUNT = 6;
 
@@ -31,28 +32,45 @@ function TransactionsListSkeleton() {
 }
 
 export function TransactionsList() {
-  const {
-    data: transactions,
-    isLoading: isTxLoading,
-    isError: isTxError,
-  } = useTransactions();
+  const { data: transactions, isLoading: isTxLoading, isError: isTxError } = useTransactions();
   const { data: categories } = useCategories();
 
   const period = useFiltersStore((s) => s.period);
   const categoryId = useFiltersStore((s) => s.categoryId);
   const type = useFiltersStore((s) => s.type);
+  const page = useFiltersStore((s) => s.page);
+  const pageSize = useFiltersStore((s) => s.pageSize);
+  const setPage = useFiltersStore((s) => s.setPage);
+  const setPageSize = useFiltersStore((s) => s.setPageSize);
 
-  const [editingTransaction, setEditingTransaction] =
-    useState<Transaction | null>(null);
-  const [deletingTransaction, setDeletingTransaction] =
-    useState<Transaction | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
 
   const deleteTransaction = useDeleteTransaction();
 
+  // Фільтрація — client-side над уже закешованим масивом (див. filterTransactions.ts).
+  // Пагінація тут — той самий підхід: не новий запит на сервер, а .slice()
+  // над уже відфільтрованим результатом. Весь датасет (250 транзакцій)
+  // і так у кеші після першого запиту.
   const filtered = useMemo(
     () => filterTransactions(transactions ?? [], { period, categoryId, type }),
-    [transactions, period, categoryId, type],
+    [transactions, period, categoryId, type]
   );
+
+  // Захист від "сторінки-привида": якщо після зміни фільтрів сторінок
+  // стало менше, ніж збережений page (напр. був на сторінці 5, а фільтр
+  // лишив лише 2 сторінки результатів) — показуємо останню валідну
+  // сторінку, а не порожню таблицю без пояснення. Обчислюється на рівні
+  // компонента (не всередині useMemo), бо потрібен і для слайсу даних,
+  // і для самого компонента Pagination — обидва мають показувати ту саму
+  // "справжню" сторінку, а не сире значення зі стору, яке може бути поза межами
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+
+  const paginated = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, safePage, pageSize]);
 
   async function handleConfirmDelete() {
     if (!deletingTransaction) return;
@@ -73,11 +91,7 @@ export function TransactionsList() {
   }
 
   if (!transactions || transactions.length === 0) {
-    return (
-      <p className="p-8 text-center text-sm text-muted">
-        Транзакцій поки немає.
-      </p>
-    );
+    return <p className="p-8 text-center text-sm text-muted">Транзакцій поки немає.</p>;
   }
 
   if (filtered.length === 0) {
@@ -93,7 +107,7 @@ export function TransactionsList() {
   return (
     <>
       <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full min-w-160 text-sm">
+        <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-surface-2 text-xs uppercase tracking-wide text-faint">
             <tr>
               <th className="px-4 py-3 text-left font-medium">Опис</th>
@@ -104,15 +118,12 @@ export function TransactionsList() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((tx) => {
+            {paginated.map((tx) => {
               const category = categoryMap.get(tx.categoryId);
-              const isIncome = tx.type === "income";
+              const isIncome = tx.type === 'income';
 
               return (
-                <tr
-                  key={tx.id}
-                  className="border-t border-border  hover:bg-surface-2"
-                >
+                <tr key={tx.id} className="border-t border-border transition-colors hover:bg-surface-2">
                   <td className="px-4 py-3">{tx.description}</td>
                   <td className="px-4 py-3">
                     {category && (
@@ -125,15 +136,13 @@ export function TransactionsList() {
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-muted">
-                    {formatDate(tx.date)}
-                  </td>
+                  <td className="px-4 py-3 text-muted">{formatDate(tx.date)}</td>
                   <td
                     className={`px-4 py-3 text-right font-mono tabular-nums ${
-                      isIncome ? "text-income" : "text-expense"
+                      isIncome ? 'text-income' : 'text-expense'
                     }`}
                   >
-                    {isIncome ? "+" : "−"}
+                    {isIncome ? '+' : '−'}
                     {formatCurrency(tx.amount)}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -160,6 +169,14 @@ export function TransactionsList() {
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        page={safePage}
+        pageSize={pageSize}
+        total={filtered.length}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+      />
 
       {editingTransaction && (
         <TransactionFormModal
