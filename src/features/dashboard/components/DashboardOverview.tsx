@@ -2,38 +2,35 @@
 
 import { useMemo } from 'react';
 import { useTransactions, useCategories } from '@/features/transactions/api';
+import { useDashboardStore } from '@/store/dashboardStore';
 import { buildDailySeries, computeTotals, aggregateExpensesByCategory } from '../utils/aggregateTransactions';
 import { BalanceCards } from './BalanceCards';
 import { SpendingChart } from './SpendingChart';
 import { CategoryBreakdownChart } from './CategoryBreakdownChart';
 
-const PERIOD_DAYS = 30;
-
 export function DashboardOverview() {
   const { data: transactions, isLoading, isError } = useTransactions();
   const { data: categories } = useCategories();
+  const periodDays = useDashboardStore((s) => s.periodDays);
 
   const dailySeries = useMemo(
-    () => buildDailySeries(transactions ?? [], PERIOD_DAYS),
-    [transactions]
+    () => buildDailySeries(transactions ?? [], periodDays),
+    [transactions, periodDays]
   );
 
   const periodTransactions = useMemo(() => {
     const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - PERIOD_DAYS);
+    cutoff.setDate(cutoff.getDate() - periodDays);
     return (transactions ?? []).filter((tx) => new Date(tx.date) >= cutoff);
-  }, [transactions]);
+  }, [transactions, periodDays]);
 
   const periodTotals = useMemo(() => computeTotals(periodTransactions), [periodTransactions]);
 
-  // Total balance — за ВЕСЬ час, а не лише період графіка (це окрема,
-  // навмисно ширша метрика: "скільки я маю зараз" vs "як я заробляв/тратив
-  // останні 30 днів")
+  // Total balance — за ВЕСЬ час, незалежно від обраного періоду графіка
+  // (це окрема, навмисно ширша метрика: "скільки я маю зараз")
   const allTimeBalance = useMemo(() => computeTotals(transactions ?? []).balance, [transactions]);
 
-  // Розподіл по категоріях — за той самий 30-денний період, що й графік
-  // динаміки (а не за весь час) — інакше цифри на dashboard "не билися" б
-  // одна з одною при першому погляді
+  // Розподіл по категоріях — за той самий період, що й графік динаміки
   const categoryBreakdown = useMemo(
     () => aggregateExpensesByCategory(periodTransactions, categories ?? []),
     [periodTransactions, categories]
@@ -49,7 +46,7 @@ export function DashboardOverview() {
 
   return (
     <div className="flex flex-col gap-6">
-      <BalanceCards allTimeBalance={allTimeBalance} periodTotals={periodTotals} periodDays={PERIOD_DAYS} />
+      <BalanceCards allTimeBalance={allTimeBalance} periodTotals={periodTotals} periodDays={periodDays} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[3fr_2fr]">
         <SpendingChart data={dailySeries} />

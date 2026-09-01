@@ -1,17 +1,23 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useTransactions, useCategories } from '../api';
+import { useFiltersStore } from '@/store/filtersStore';
+import { filterTransactions } from '../utils/filterTransactions';
 import { formatCurrency, formatDate } from '@/shared/lib/formatters';
 
-/**
- * Крок 2: рендер РЕАЛЬНИХ даних без фільтрів/пагінації — весь масив
- * одразу (250 транзакцій). Фільтри й пагінація (крок 5) не змінять
- * структуру цього компонента — вони лише передадуть параметри в
- * useTransactions(params), сам рендер рядків лишиться той самий.
- */
 export function TransactionsList() {
   const { data: transactions, isLoading: isTxLoading, isError: isTxError } = useTransactions();
   const { data: categories } = useCategories();
+
+  const period = useFiltersStore((s) => s.period);
+  const categoryId = useFiltersStore((s) => s.categoryId);
+  const type = useFiltersStore((s) => s.type);
+
+  const filtered = useMemo(
+    () => filterTransactions(transactions ?? [], { period, categoryId, type }),
+    [transactions, period, categoryId, type]
+  );
 
   if (isTxLoading) {
     return <p className="p-8 text-center text-sm text-muted">Завантаження транзакцій...</p>;
@@ -29,6 +35,14 @@ export function TransactionsList() {
     return <p className="p-8 text-center text-sm text-muted">Транзакцій поки немає.</p>;
   }
 
+  if (filtered.length === 0) {
+    return (
+      <p className="p-8 text-center text-sm text-muted">
+        Жодна транзакція не відповідає обраним фільтрам.
+      </p>
+    );
+  }
+
   const categoryMap = new Map((categories ?? []).map((c) => [c.id, c]));
 
   return (
@@ -43,7 +57,7 @@ export function TransactionsList() {
           </tr>
         </thead>
         <tbody>
-          {transactions.map((tx) => {
+          {filtered.map((tx) => {
             const category = categoryMap.get(tx.categoryId);
             const isIncome = tx.type === 'income';
 
@@ -53,9 +67,6 @@ export function TransactionsList() {
                 <td className="px-4 py-3">
                   {category && (
                     <span className="inline-flex items-center gap-2">
-                      {/* Колір категорії — динамічний, з даних, тому inline
-                          style (не class): Tailwind генерує класи лише
-                          з рядків, відомих на етапі збірки, не з рантайм-значень */}
                       <span
                         className="h-2 w-2 rounded-full"
                         style={{ backgroundColor: category.color }}

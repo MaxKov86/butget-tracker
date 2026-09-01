@@ -72,7 +72,16 @@ function Chart({ width, height, data }: ChartProps) {
       const point = localPoint(event);
       if (!point) return;
 
-      const x0 = xScale.invert(point.x);
+      // localPoint повертає координати відносно самого <svg> (його власна
+      // система координат), а НЕ відносно внутрішньої <Group left={MARGIN.left}>,
+      // де реально намальовані лінії й цей rect. xScale/yScale натомість
+      // побудовані у координатах, вже зсунутих на margin (range: [0, innerWidth]).
+      // Без цього віднімання розрахунок "найближчої точки" завжди був би
+      // зміщений на MARGIN.left праворуч від реального курсора — саме
+      // це й спричиняло помітний зсув, особливо біля лівого краю графіка.
+      const x = point.x - MARGIN.left;
+
+      const x0 = xScale.invert(x);
       const index = bisectDate(data, x0, 1);
       const dLeft = data[index - 1];
       const dRight = data[index];
@@ -184,6 +193,7 @@ function Chart({ width, height, data }: ChartProps) {
             width={innerWidth}
             height={innerHeight}
             fill="transparent"
+            style={{ cursor: 'pointer' }}
             onMouseMove={handlePointerMove}
             onTouchMove={handlePointerMove}
             onMouseLeave={hideTooltip}
