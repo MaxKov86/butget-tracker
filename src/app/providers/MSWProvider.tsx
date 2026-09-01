@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from "react";
 
 /**
  * У Next.js App Router MSW не можна просто "запустити і забути" —
@@ -24,10 +24,35 @@ export function MSWProvider({ children }: { children: ReactNode }) {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    async function refreshWorkerRegistration() {
+      const { forceRestartWorker } = await import("../../mocks/browser");
+      await forceRestartWorker();
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        refreshWorkerRegistration();
+      }
+    }
+
+    const REFRESH_INTERVAL_MS = 20_000;
+    const intervalId = setInterval(
+      refreshWorkerRegistration,
+      REFRESH_INTERVAL_MS,
+    );
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
     let isCancelled = false;
 
     async function enableMocking() {
-      const { startWorker } = await import('../../mocks/browser');
+      const { startWorker } = await import("../../mocks/browser");
       await startWorker();
       if (!isCancelled) {
         setIsReady(true);
